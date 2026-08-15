@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Organizador de tareas · FLUX</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#003452;
+    --navy-light:#0a4a6e;
+    --sapphire:#246BCE;
+    --sapphire-dark:#1a4f99;
+    --teal:#1FC1B1;
+    --teal-dark:#158f83;
+    --amber:#F5A623;
+    --amber-dark:#b6790f;
+    --paper:#F6F9FB;
+    --card:#FFFFFF;
+    --ink:#0B2233;
+    --ink-soft:#5A7285;
+    --line:#DCE6EC;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Urbanist',sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    min-height:100vh;
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(0,52,82,0.07) 1px, transparent 0);
+    background-size:26px 26px;
+  }
+  .mono{font-family:'DM Mono',monospace;}
+  .app{max-width:1120px;margin:0 auto;padding:32px 24px 64px;}
+
+  /* ---------- top bar ---------- */
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;}
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand-mark{
+    width:36px;height:36px;border-radius:9px;
+    background:linear-gradient(135deg,var(--navy),var(--sapphire));
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-family:'DM Mono',monospace;font-size:13px;font-weight:500;
+    letter-spacing:0.5px;
+  }
+  .brand-name{font-weight:800;font-size:19px;letter-spacing:0.2px;}
+  .brand-sub{font-size:11px;color:var(--ink-soft);font-family:'DM Mono',monospace;margin-top:-2px;letter-spacing:0.5px;text-transform:uppercase;}
+
+  .nav-tabs{display:flex;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px;}
+  .nav-tab{
+    border:none;background:transparent;padding:9px 18px;border-radius:999px;
+    font-family:'Urbanist',sans-serif;font-weight:600;font-size:14px;color:var(--ink-soft);
+    cursor:pointer;transition:all .15s ease;
+  }
+  .nav-tab.active{background:var(--navy);color:#fff;}
+  .nav-tab:hover:not(.active){background:var(--paper);}
+
+  .btn-new{
+    display:flex;align-items:center;gap:6px;
+    background:var(--teal);color:#04342c;border:none;border-radius:10px;
+    padding:11px 18px;font-family:'Urbanist',sans-serif;font-weight:700;font-size:14px;
+    cursor:pointer;transition:transform .12s ease, background .15s ease;
+  }
+  .btn-new:hover{background:var(--teal-dark);color:#fff;transform:translateY(-1px);}
+
+  /* ---------- screens ---------- */
+  .screen{display:none;}
+  .screen.active{display:block;}
+
+  /* ---------- welcome ---------- */
+  #screen-welcome.active{display:flex;justify-content:center;align-items:center;min-height:68vh;}
+  .welcome-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:24px;
+    padding:52px 48px;
+    max-width:520px;
+    width:100%;
+    text-align:center;
+    position:relative;
+    overflow:hidden;
+  }
+  .welcome-card::before{
+    content:"";position:absolute;top:-40px;right:-40px;width:160px;height:160px;
+    border-radius:50%;background:radial-gradient(circle,rgba(31,193,177,0.16),transparent 70%);
+  }
+  .welcome-card::after{
+    content:"";position:absolute;bottom:-50px;left:-50px;width:180px;height:180px;
+    border-radius:50%;background:radial-gradient(circle,rgba(36,107,206,0.14),transparent 70%);
+  }
+  .welcome-eyebrow{
+    font-family:'DM Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;
+    color:var(--sapphire-dark);margin-bottom:14px;position:relative;
+  }
+  .welcome-title{font-size:30px;font-weight:800;line-height:1.2;margin:0 0 8px;position:relative;}
+  .welcome-title span{color:var(--teal-dark);}
+  .welcome-desc{font-size:15px;color:var(--ink-soft);margin:0 0 34px;position:relative;line-height:1.5;}
+  .ask-box{
+    background:var(--paper);border:1px solid var(--line);border-radius:16px;
+    padding:26px 24px;position:relative;
+  }
+  .ask-question{font-size:16px;font-weight:700;margin:0 0 18px;}
+  .ask-actions{display:flex;gap:12px;justify-content:center;}
+  .ask-btn{
+    flex:1;padding:13px 0;border-radius:10px;border:1.5px solid transparent;
+    font-family:'Urbanist',sans-serif;font-weight:700;font-size:14.5px;cursor:pointer;
+    transition:all .15s ease;
+  }
+  .ask-btn.yes{background:var(--navy);color:#fff;}
+  .ask-btn.yes:hover{background:var(--navy-light);}
+  .ask-btn.no{background:#fff;color:var(--navy);border-color:var(--line);}
+  .ask-btn.no:hover{border-color:var(--navy);}
+
+  /* ---------- form ---------- */
+  #screen-form.active{display:flex;justify-content:center;}
+  .form-card{
+    background:var(--card);border:1px solid var(--line);border-radius:20px;
+    padding:36px 40px;max-width:520px;width:100%;
+  }
+  .form-title{font-size:22px;font-weight:800;margin:0 0 4px;}
+  .form-sub{font-size:13.5px;color:var(--ink-soft);margin:0 0 28px;}
+  .field{margin-bottom:22px;}
+  .field label{display:block;font-size:12.5px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;}
+  .field input[type=text], .field input[type=date]{
+    width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid var(--line);
+    font-family:'DM Mono',monospace;font-size:14px;color:var(--ink);background:#fff;
+    outline:none;transition:border-color .15s ease;
+  }
+  .field input:focus{border-color:var(--sapphire);}
+  .err{color:#C0392B;font-size:12.5px;margin-top:6px;display:none;font-family:'DM Mono',monospace;}
+  .type-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .type-chip{
+    border:1.5px solid var(--line);border-radius:10px;padding:12px 12px;cursor:pointer;
+    display:flex;align-items:center;gap:9px;transition:all .13s ease;background:#fff;
+  }
+  .type-chip .dot{width:11px;height:11px;border-radius:50%;flex-shrink:0;}
+  .type-chip span{font-size:13.5px;font-weight:600;}
+  .type-chip.selected{border-color:var(--chip-color);background:var(--chip-bg);}
+  .form-actions{display:flex;gap:12px;margin-top:32px;}
+  .btn-primary{
+    flex:1;padding:13px 0;border-radius:10px;border:none;background:var(--navy);color:#fff;
+    font-family:'Urbanist',sans-serif;font-weight:700;font-size:14.5px;cursor:pointer;
+  }
+  .btn-primary:hover{background:var(--navy-light);}
+  .btn-ghost{
+    padding:13px 20px;border-radius:10px;border:1.5px solid var(--line);background:#fff;color:var(--ink-soft);
+    font-family:'Urbanist',sans-serif;font-weight:700;font-size:14.5px;cursor:pointer;
+  }
+  .btn-ghost:hover{border-color:var(--navy);color:var(--navy);}
+
+  /* ---------- board ---------- */
+  .board-sub{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;}
+  .legend-item{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-soft);font-family:'DM Mono',monospace;}
+  .legend-dot{width:9px;height:9px;border-radius:50%;}
+
+  .columns{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+  .column{background:rgba(255,255,255,0.5);border:1px solid var(--line);border-radius:16px;padding:14px;min-height:200px;}
+  .column-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding:0 4px;}
+  .column-title{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:0.6px;color:var(--navy);}
+  .column-count{
+    font-family:'DM Mono',monospace;font-size:11.5px;background:var(--navy);color:#fff;
+    border-radius:999px;padding:2px 9px;
+  }
+  .cards{display:flex;flex-direction:column;gap:10px;}
+  .task-card{
+    background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 14px;
+    border-left:4px solid var(--chip-color);
+  }
+  .task-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px;}
+  .task-name{font-size:14px;font-weight:700;line-height:1.35;}
+  .task-del{background:none;border:none;color:var(--ink-soft);cursor:pointer;font-size:15px;line-height:1;padding:2px;flex-shrink:0;}
+  .task-del:hover{color:#C0392B;}
+  .task-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+  .task-type-pill{
+    font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;
+    background:var(--chip-bg);color:var(--chip-color);
+  }
+  .task-date{font-family:'DM Mono',monospace;font-size:11.5px;color:var(--ink-soft);}
+  .task-move{display:flex;gap:6px;margin-top:10px;}
+  .move-btn{
+    flex:1;font-family:'DM Mono',monospace;font-size:11px;padding:6px 0;border-radius:7px;
+    border:1px solid var(--line);background:#fff;color:var(--ink-soft);cursor:pointer;
+  }
+  .move-btn:hover:not(:disabled){border-color:var(--navy);color:var(--navy);}
+  .move-btn:disabled{opacity:0.3;cursor:default;}
+  .empty-col{font-size:12.5px;color:var(--ink-soft);text-align:center;padding:20px 6px;font-family:'DM Mono',monospace;}
+
+  /* ---------- calendar ---------- */
+  .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+  .cal-nav{display:flex;align-items:center;gap:14px;}
+  .cal-nav button{
+    width:32px;height:32px;border-radius:8px;border:1px solid var(--line);background:#fff;
+    cursor:pointer;font-size:15px;color:var(--navy);
+  }
+  .cal-nav button:hover{border-color:var(--navy);}
+  .cal-month{font-size:17px;font-weight:800;min-width:170px;text-align:center;text-transform:capitalize;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+  .cal-dow{font-family:'DM Mono',monospace;font-size:11px;color:var(--ink-soft);text-align:center;padding-bottom:6px;text-transform:uppercase;}
+  .cal-day{
+    min-height:86px;border-radius:10px;border:1px solid var(--line);background:var(--card);
+    padding:6px;display:flex;flex-direction:column;gap:3px;
+  }
+  .cal-day.empty{background:transparent;border-color:transparent;}
+  .cal-daynum{font-family:'DM Mono',monospace;font-size:11.5px;color:var(--ink-soft);}
+  .cal-day.today .cal-daynum{color:#fff;background:var(--navy);width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+  .cal-task-dot{
+    font-size:10px;padding:2px 6px;border-radius:6px;background:var(--chip-bg);color:var(--chip-color);
+    font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+
+  @media(max-width:760px){
+    .columns{grid-template-columns:1fr;}
+    .topbar{flex-direction:column;align-items:flex-start;gap:14px;}
+    .welcome-card{padding:36px 24px;}
+    .form-card{padding:28px 22px;}
+    .type-grid{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">FX</div>
+      <div>
+        <div class="brand-name">FLUX</div>
+        <div class="brand-sub">Tareas &amp; pendientes</div>
+      </div>
+    </div>
+    <div id="boardNavWrap" style="display:none;align-items:center;gap:14px;">
+      <div class="nav-tabs">
+        <button class="nav-tab active" id="tabKanban" onclick="setBoardView('kanban')">Tablero</button>
+        <button class="nav-tab" id="tabCalendar" onclick="setBoardView('calendar')">Calendario</button>
+      </div>
+      <button class="btn-new" onclick="goForm()"><i>+</i> Nueva tarea</button>
+    </div>
+  </div>
+
+  <!-- WELCOME -->
+  <div class="screen active" id="screen-welcome">
+    <div class="welcome-card">
+      <div class="welcome-eyebrow">FLUX Solutions Cali</div>
+      <h1 class="welcome-title">Bienvenida, <span>Ktalyna</span></h1>
+      <p class="welcome-desc">Este es tu organizador de tareas y pendientes.</p>
+      <div class="ask-box">
+        <p class="ask-question">¿Quieres registrar una nueva tarea?</p>
+        <div class="ask-actions">
+          <button class="ask-btn yes" onclick="goForm()">Sí, registrar</button>
+          <button class="ask-btn no" onclick="goBoard()">No, ver tablero</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FORM -->
+  <div class="screen" id="screen-form">
+    <div class="form-card">
+      <h2 class="form-title">Nueva tarea</h2>
+      <p class="form-sub">Registra el pendiente con su fecha y tipo.</p>
+
+      <div class="field">
+        <label for="taskName">Nombre de la tarea</label>
+        <input type="text" id="taskName" placeholder="Ej. Diseñar calendario de cumpleaños">
+        <div class="err" id="errName">Escribe el nombre de la tarea.</div>
+      </div>
+
+      <div class="field">
+        <label for="taskDate">Fecha límite</label>
+        <input type="date" id="taskDate">
+        <div class="err" id="errDate">Selecciona una fecha.</div>
+      </div>
+
+      <div class="field">
+        <label>Tipo de tarea</label>
+        <div class="type-grid" id="typeGrid"></div>
+        <div class="err" id="errType">Elige un tipo de tarea.</div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn-ghost" onclick="goBoard()">Cancelar</button>
+        <button class="btn-primary" onclick="submitTask()">Guardar tarea</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOARD -->
+  <div class="screen" id="screen-board">
+    <div class="board-sub">
+      <div class="legend" id="legend"></div>
+    </div>
+
+    <div id="view-kanban">
+      <div class="columns" id="columns"></div>
+    </div>
+
+    <div id="view-calendar" style="display:none;">
+      <div class="cal-head">
+        <div class="cal-month mono" id="calMonthLabel"></div>
+        <div class="cal-nav">
+          <button onclick="calShift(-1)">‹</button>
+          <button onclick="calShift(1)">›</button>
+        </div>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const TYPES = {
+  bienestar:  { label:'Bienestar y Cultura', color:'#158f83', bg:'#E1F5EE', dot:'#1FC1B1' },
+  comunicacion: { label:'Comunicaciones', color:'#1a4f99', bg:'#E6F1FB', dot:'#246BCE' },
+  creativo: { label:'Diseño Creativo', color:'#b6790f', bg:'#FAEEDA', dot:'#F5A623' },
+  pcb: { label:'Diseño PCB', color:'#003452', bg:'#E4EBEF', dot:'#003452' }
+};
+const STATUSES = ['recibido','proceso','finalizada'];
+const STATUS_LABEL = { recibido:'Recibido', proceso:'En proceso', finalizada:'Finalizada' };
+
+let tasks = [];
+let selectedType = null;
+let boardView = 'kanban';
+let calCursor = new Date();
+calCursor.setDate(1);
+
+async function loadTasks(){
+  try{
+    const res = await window.storage.get('flux-tasks', false);
+    tasks = res ? JSON.parse(res.value) : [];
+  }catch(e){
+    tasks = [];
+  }
+}
+async function persistTasks(){
+  try{
+    await window.storage.set('flux-tasks', JSON.stringify(tasks), false);
+  }catch(e){
+    console.error('No se pudo guardar', e);
+  }
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.getElementById('boardNavWrap').style.display = (id==='screen-board') ? 'flex' : 'none';
+}
+
+function goForm(){
+  document.getElementById('taskName').value='';
+  document.getElementById('taskDate').value='';
+  selectedType=null;
+  document.querySelectorAll('.err').forEach(e=>e.style.display='none');
+  renderTypeGrid();
+  showScreen('screen-form');
+}
+
+function goBoard(){
+  renderLegend();
+  renderBoard();
+  showScreen('screen-board');
+}
+
+function renderTypeGrid(){
+  const grid = document.getElementById('typeGrid');
+  grid.innerHTML = '';
+  Object.entries(TYPES).forEach(([key,t])=>{
+    const chip = document.createElement('div');
+    chip.className = 'type-chip' + (selectedType===key ? ' selected' : '');
+    chip.style.setProperty('--chip-color', t.dot);
+    chip.style.setProperty('--chip-bg', t.bg);
+    chip.innerHTML = `<span class="dot" style="background:${t.dot}"></span><span>${t.label}</span>`;
+    chip.onclick = ()=>{ selectedType = key; renderTypeGrid(); };
+    grid.appendChild(chip);
+  });
+}
+
+async function submitTask(){
+  const nameEl = document.getElementById('taskName');
+  const dateEl = document.getElementById('taskDate');
+  const name = nameEl.value.trim();
+  const date = dateEl.value;
+  let ok = true;
+  document.getElementById('errName').style.display='none';
+  document.getElementById('errDate').style.display='none';
+  document.getElementById('errType').style.display='none';
+
+  if(!name){ document.getElementById('errName').style.display='block'; ok=false; }
+  if(!date){ document.getElementById('errDate').style.display='block'; ok=false; }
+  if(!selectedType){ document.getElementById('errType').style.display='block'; ok=false; }
+  if(!ok) return;
+
+  tasks.push({
+    id: 't'+Date.now(),
+    name, date, type: selectedType, status:'recibido'
+  });
+  await persistTasks();
+  goBoard();
+}
+
+function renderLegend(){
+  const legend = document.getElementById('legend');
+  legend.innerHTML = Object.values(TYPES).map(t=>
+    `<div class="legend-item"><span class="legend-dot" style="background:${t.dot}"></span>${t.label}</div>`
+  ).join('');
+}
+
+function setBoardView(view){
+  boardView = view;
+  document.getElementById('tabKanban').classList.toggle('active', view==='kanban');
+  document.getElementById('tabCalendar').classList.toggle('active', view==='calendar');
+  document.getElementById('view-kanban').style.display = view==='kanban' ? 'block':'none';
+  document.getElementById('view-calendar').style.display = view==='calendar' ? 'block':'none';
+  if(view==='calendar') renderCalendar();
+}
+
+function renderBoard(){
+  const columns = document.getElementById('columns');
+  columns.innerHTML = '';
+  const sorted = [...tasks].sort((a,b)=> (a.date||'').localeCompare(b.date||''));
+  STATUSES.forEach(status=>{
+    const col = document.createElement('div');
+    col.className = 'column';
+    const list = sorted.filter(t=>t.status===status);
+    col.innerHTML = `
+      <div class="column-head">
+        <span class="column-title">${STATUS_LABEL[status]}</span>
+        <span class="column-count mono">${list.length}</span>
+      </div>
+      <div class="cards" id="cards-${status}"></div>
+    `;
+    columns.appendChild(col);
+    const cardsWrap = col.querySelector('.cards');
+    if(list.length===0){
+      cardsWrap.innerHTML = `<div class="empty-col">Sin tareas aquí</div>`;
+    } else {
+      list.forEach(task=>cardsWrap.appendChild(renderCard(task, status)));
+    }
+  });
+}
+
+function renderCard(task, status){
+  const t = TYPES[task.type];
+  const idx = STATUSES.indexOf(status);
+  const card = document.createElement('div');
+  card.className = 'task-card';
+  card.style.setProperty('--chip-color', t.dot);
+  card.style.setProperty('--chip-bg', t.bg);
+  const dateFmt = task.date ? formatDate(task.date) : 'Sin fecha';
+  card.innerHTML = `
+    <div class="task-top">
+      <div class="task-name">${escapeHtml(task.name)}</div>
+      <button class="task-del" title="Eliminar" onclick="deleteTask('${task.id}')">×</button>
+    </div>
+    <div class="task-meta">
+      <span class="task-type-pill">${t.label}</span>
+      <span class="task-date mono">${dateFmt}</span>
+    </div>
+    <div class="task-move">
+      <button class="move-btn" ${idx===0?'disabled':''} onclick="moveTask('${task.id}',-1)">‹ mover</button>
+      <button class="move-btn" ${idx===STATUSES.length-1?'disabled':''} onclick="moveTask('${task.id}',1)">mover ›</button>
+    </div>
+  `;
+  return card;
+}
+
+async function moveTask(id, dir){
+  const task = tasks.find(t=>t.id===id);
+  if(!task) return;
+  const idx = STATUSES.indexOf(task.status);
+  const newIdx = idx + dir;
+  if(newIdx<0 || newIdx>=STATUSES.length) return;
+  task.status = STATUSES[newIdx];
+  await persistTasks();
+  renderBoard();
+  if(boardView==='calendar') renderCalendar();
+}
+
+async function deleteTask(id){
+  tasks = tasks.filter(t=>t.id!==id);
+  await persistTasks();
+  renderBoard();
+  if(boardView==='calendar') renderCalendar();
+}
+
+function formatDate(iso){
+  const [y,m,d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+/* ---------- calendar ---------- */
+const MONTHS = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const DOW = ['lun','mar','mié','jue','vie','sáb','dom'];
+
+function calShift(dir){
+  calCursor.setMonth(calCursor.getMonth()+dir);
+  renderCalendar();
+}
+
+function renderCalendar(){
+  document.getElementById('calMonthLabel').textContent = `${MONTHS[calCursor.getMonth()]} ${calCursor.getFullYear()}`;
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+  DOW.forEach(d=>{
+    const el = document.createElement('div');
+    el.className = 'cal-dow';
+    el.textContent = d;
+    grid.appendChild(el);
+  });
+
+  const year = calCursor.getFullYear();
+  const month = calCursor.getMonth();
+  const firstDay = new Date(year, month, 1);
+  let startOffset = firstDay.getDay() - 1;
+  if(startOffset < 0) startOffset = 6;
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+
+  const today = new Date();
+  const todayIso = today.toISOString().slice(0,10);
+
+  for(let i=0;i<startOffset;i++){
+    const el = document.createElement('div');
+    el.className = 'cal-day empty';
+    grid.appendChild(el);
+  }
+
+  for(let day=1; day<=daysInMonth; day++){
+    const iso = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const el = document.createElement('div');
+    el.className = 'cal-day' + (iso===todayIso ? ' today' : '');
+    const dayTasks = tasks.filter(t=>t.date===iso);
+    el.innerHTML = `<div class="cal-daynum">${day}</div>` +
+      dayTasks.slice(0,3).map(t=>{
+        const type = TYPES[t.type];
+        return `<div class="cal-task-dot" style="background:${type.bg};color:${type.color}" title="${escapeHtml(t.name)}">${escapeHtml(t.name)}</div>`;
+      }).join('') +
+      (dayTasks.length>3 ? `<div class="cal-task-dot" style="background:var(--paper);color:var(--ink-soft)">+${dayTasks.length-3} más</div>` : '');
+    grid.appendChild(el);
+  }
+}
+
+(async function init(){
+  await loadTasks();
+})();
+</script>
+</body>
+</html>
