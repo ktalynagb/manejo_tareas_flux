@@ -12,7 +12,11 @@ exports.handler = async (event) => {
     return { statusCode: 204, headers, body: '' };
   }
 
-  const store = getStore('flux-tareas');
+  const store = getStore({
+    name: 'flux-tareas',
+    siteID: process.env.SITE_ID,
+    token: process.env.BLOBS_TOKEN
+  });
 
   if (event.httpMethod === 'GET') {
     const data = await store.get('tasks', { type: 'json' });
