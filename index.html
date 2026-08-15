@@ -264,7 +264,7 @@
       <div class="brand-mark">FX</div>
       <div>
         <div class="brand-name">FLUX</div>
-        <div class="brand-sub">Tareas &amp; pendientes</div>
+        <div class="brand-sub">Organizador general</div>
       </div>
     </div>
     <div id="boardNavWrap" style="display:none;align-items:center;gap:14px;flex-wrap:wrap;">
@@ -272,6 +272,7 @@
         <button class="nav-tab active" id="tabKanban" onclick="setBoardView('kanban')">Tablero</button>
         <button class="nav-tab" id="tabCalendar" onclick="setBoardView('calendar')">Calendario</button>
       </div>
+      <button class="btn-ghost" onclick="loadDefaultEvents()">Cargar fechas de FLUX</button>
       <button class="btn-new" onclick="goForm()"><i>+</i> Nueva tarea</button>
     </div>
   </div>
@@ -284,10 +285,10 @@
   <div class="screen active" id="screen-welcome">
     <div class="welcome-card">
       <div class="welcome-eyebrow">FLUX Solutions Cali</div>
-      <h1 class="welcome-title">Bienvenida, <span>Ktalyna</span></h1>
-      <p class="welcome-desc">Este es tu organizador de tareas y pendientes.</p>
+      <h1 class="welcome-title">Organizador de <span>FLUX</span></h1>
+      <p class="welcome-desc">Tareas, fechas importantes y reuniones del equipo, todo en un solo lugar.</p>
       <div class="ask-box">
-        <p class="ask-question">¿Quieres registrar una nueva tarea?</p>
+        <p class="ask-question">¿Quieres registrar algo nuevo?</p>
         <div class="ask-actions">
           <button class="ask-btn yes" onclick="goForm()">Sí, registrar</button>
           <button class="ask-btn no" onclick="goBoard()">No, ver tablero</button>
@@ -372,8 +373,27 @@ const TYPES = {
   bienestar:  { label:'Bienestar y Cultura', color:'#158f83', bg:'#E1F5EE', dot:'#1FC1B1' },
   comunicacion: { label:'Comunicaciones', color:'#1a4f99', bg:'#E6F1FB', dot:'#246BCE' },
   creativo: { label:'Diseño Creativo', color:'#b6790f', bg:'#FAEEDA', dot:'#F5A623' },
-  pcb: { label:'Diseño PCB', color:'#003452', bg:'#E4EBEF', dot:'#003452' }
+  pcb: { label:'Diseño PCB', color:'#003452', bg:'#E4EBEF', dot:'#003452' },
+  evento: { label:'Fecha importante', color:'#791F1F', bg:'#FCEBEB', dot:'#E24B4A' },
+  reunion: { label:'Reunión', color:'#993C1D', bg:'#FAECE7', dot:'#F0997B' }
 };
+const DEFAULT_EVENTS = [
+  { name:'Cumpleaños de Juan', date:'2026-02-11' },
+  { name:'Día Internacional de la Mujer y la Niña en la Ciencia', date:'2026-02-11' },
+  { name:'Día Mundial de la Creatividad y la Innovación', date:'2026-04-21' },
+  { name:'Día Mundial de la Propiedad Intelectual', date:'2026-04-26' },
+  { name:'Día Mundial de las TIC', date:'2026-05-17' },
+  { name:'Día de la Madre (Colombia)', date:'2026-05-10' },
+  { name:'Día del Ingeniero (oficial, SCI)', date:'2026-05-29' },
+  { name:'Cumpleaños de Samuel', date:'2026-06-13' },
+  { name:'Día del Padre (Colombia)', date:'2026-06-21' },
+  { name:'Cumpleaños de Ktalyna', date:'2026-07-01' },
+  { name:'Día del Ingeniero (fecha popular)', date:'2026-08-17' },
+  { name:'Aniversario de FLUX', date:'2026-09-17' },
+  { name:'Día del Programador', date:'2026-09-13' },
+  { name:'Día del Amor y la Amistad (Colombia)', date:'2026-09-19' },
+  { name:'Cumpleaños de David', date:'2026-12-13' }
+];
 const STATUSES = ['recibido','proceso','finalizada'];
 const STATUS_LABEL = { recibido:'Recibido', proceso:'En proceso', finalizada:'Finalizada' };
 const API_URL = '/.netlify/functions/tasks';
@@ -541,6 +561,30 @@ async function deleteFromForm(){
   tasks = tasks.filter(t=>t.id!==editingId);
   await persistTasks();
   goBoard();
+}
+
+async function loadDefaultEvents(){
+  const existingKeys = new Set(tasks.map(t=>t.name+'|'+t.date));
+  let added = 0;
+  DEFAULT_EVENTS.forEach(ev=>{
+    const key = ev.name+'|'+ev.date;
+    if(existingKeys.has(key)) return;
+    tasks.push({
+      id: 't'+Date.now()+Math.random().toString(36).slice(2,7),
+      name: ev.name, description:'', date: ev.date, type:'evento', status:'recibido', file:null
+    });
+    existingKeys.add(key);
+    added++;
+  });
+  if(added===0){
+    alert('Esas fechas ya estaban cargadas.');
+    return;
+  }
+  if(await persistTasks()){
+    renderBoard();
+    if(boardView==='calendar') renderCalendar();
+    alert(added+' fecha(s) agregada(s).');
+  }
 }
 
 function renderLegend(){
