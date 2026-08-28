@@ -247,6 +247,39 @@
     cursor:pointer;
   }
 
+  /* ---------- fechas section ---------- */
+  .fechas-section{
+    margin-bottom:20px;background:#FCEBEB;
+    border:1px solid rgba(226,75,74,0.22);border-radius:16px;padding:14px 16px;
+  }
+  .fechas-head{display:flex;align-items:center;margin-bottom:12px;}
+  .fechas-title{
+    font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:0.6px;
+    color:#791F1F;display:flex;align-items:center;gap:7px;
+  }
+  .fechas-strip{display:flex;gap:10px;overflow-x:auto;padding-bottom:2px;}
+  .fecha-item{
+    flex-shrink:0;background:#fff;border:1px solid rgba(226,75,74,0.2);
+    border-left:3px solid #E24B4A;border-radius:10px;padding:10px 12px;
+    display:flex;align-items:center;gap:10px;cursor:pointer;
+    transition:border-color .12s ease;min-width:190px;max-width:260px;
+  }
+  .fecha-item:hover{border-color:#E24B4A;}
+  .fecha-badge{
+    font-family:'DM Mono',monospace;font-size:11px;font-weight:500;
+    color:#791F1F;background:rgba(226,75,74,0.1);border-radius:7px;
+    padding:4px 7px;white-space:nowrap;flex-shrink:0;
+  }
+  .fecha-name{
+    font-size:13px;font-weight:600;color:var(--ink);flex:1;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .fecha-del{
+    background:none;border:none;color:rgba(121,31,31,0.35);cursor:pointer;
+    font-size:15px;line-height:1;padding:2px;flex-shrink:0;
+  }
+  .fecha-del:hover{color:#C0392B;}
+
   @media(max-width:760px){
     .columns{grid-template-columns:1fr;}
     .topbar{flex-direction:column;align-items:flex-start;gap:14px;}
@@ -272,6 +305,7 @@
         <button class="nav-tab active" id="tabKanban" onclick="setBoardView('kanban')">Tablero</button>
         <button class="nav-tab" id="tabCalendar" onclick="setBoardView('calendar')">Calendario</button>
       </div>
+      <button class="btn-ghost" onclick="loadDefaultKtaTasks()">Cargar mis tareas</button>
       <button class="btn-ghost" onclick="loadDefaultEvents()">Cargar fechas de FLUX</button>
       <button class="btn-new" onclick="goForm()"><i>+</i> Nueva tarea</button>
     </div>
@@ -291,7 +325,7 @@
         <p class="ask-question">¿Quieres registrar algo nuevo?</p>
         <div class="ask-actions">
           <button class="ask-btn yes" onclick="goForm()">Sí, registrar</button>
-          <button class="ask-btn no" onclick="goBoard()">No, ver tablero</button>
+          <button class="ask-btn no" onclick="goBoard(true)">No, ver tablero</button>
         </div>
       </div>
     </div>
@@ -350,6 +384,13 @@
       <div class="legend" id="legend"></div>
     </div>
 
+    <div id="fechas-section" style="display:none;">
+      <div class="fechas-head">
+        <div class="fechas-title"><span style="font-size:8px">●</span> Fechas importantes</div>
+      </div>
+      <div class="fechas-strip" id="fechas-strip"></div>
+    </div>
+
     <div id="view-kanban">
       <div class="columns" id="columns"></div>
     </div>
@@ -399,7 +440,22 @@ const STATUS_LABEL = { recibido:'Recibido', proceso:'En proceso', finalizada:'Fi
 const API_URL = '/.netlify/functions/tasks';
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
 
+const DEFAULT_KTA_TASKS = [
+  { name:'Contenido Hackatón (carrusel completo)', date:'2026-08-29', type:'comunicacion', description:'' },
+  { name:'Subir publicaciones LinkedIn',           date:'2026-08-29', type:'comunicacion', description:'' },
+  { name:'Corregir HTML calibración',              date:'2026-08-29', type:'pcb',          description:'' },
+  { name:'Publicación microscopio',                date:'2026-09-02', type:'comunicacion', description:'' },
+  { name:'Publicación twingo',                     date:'2026-09-04', type:'comunicacion', description:'' },
+  { name:'Misión, visión y cultura',               date:'2026-09-04', type:'bienestar',    description:'' },
+  { name:'Propuestas de negocio',                  date:'2026-09-09', type:'creativo',     description:'' },
+  { name:'Proponer plan anual de actividades FLUX',date:'2026-09-12', type:'bienestar',    description:'⚠️ urgente — aniversario FLUX' },
+  { name:'Crear estrategias internas para medición y prevención del agotamiento', date:'2026-09-16', type:'bienestar', description:'' },
+  { name:'Establecer identidad visual provisional para UEN2', date:'2026-09-18', type:'creativo', description:'' },
+  { name:'Integración de Obsidian con el calendario', date:'2026-09-12', type:'pcb',      description:'' },
+];
+
 let tasks = [];
+let tasksLoaded = false;
 let selectedType = null;
 let pendingFile = null;
 let editingId = null;
@@ -467,8 +523,11 @@ function goForm(prefill){
   showScreen('screen-form');
 }
 
-async function goBoard(){
-  await loadTasks();
+async function goBoard(forceReload=false){
+  if(forceReload || !tasksLoaded){
+    await loadTasks();
+    tasksLoaded = true;
+  }
   renderLegend();
   renderBoard();
   showScreen('screen-board');
@@ -589,9 +648,59 @@ async function loadDefaultEvents(){
 
 function renderLegend(){
   const legend = document.getElementById('legend');
-  legend.innerHTML = Object.values(TYPES).map(t=>
-    `<div class="legend-item"><span class="legend-dot" style="background:${t.dot}"></span>${t.label}</div>`
-  ).join('');
+  legend.innerHTML = Object.entries(TYPES)
+    .filter(([key]) => key !== 'evento')
+    .map(([,t]) => `<div class="legend-item"><span class="legend-dot" style="background:${t.dot}"></span>${t.label}</div>`)
+    .join('');
+}
+
+function renderFechas(eventoTasks){
+  const section = document.getElementById('fechas-section');
+  if(eventoTasks.length === 0){ section.style.display='none'; return; }
+  section.style.display = 'block';
+  const strip = document.getElementById('fechas-strip');
+  strip.innerHTML = '';
+  eventoTasks.forEach(task => {
+    const dateFmt = task.date ? formatDate(task.date) : 'Sin fecha';
+    const item = document.createElement('div');
+    item.className = 'fecha-item';
+    item.innerHTML = `
+      <span class="fecha-badge">${dateFmt}</span>
+      <span class="fecha-name">${escapeHtml(task.name)}</span>
+      <button class="fecha-del" title="Eliminar">×</button>
+    `;
+    item.querySelector('.fecha-del').addEventListener('click', e => {
+      e.stopPropagation();
+      deleteTask(task.id);
+    });
+    item.addEventListener('click', () => {
+      const live = tasks.find(t => t.id === task.id);
+      if(live) goForm(live);
+    });
+    strip.appendChild(item);
+  });
+}
+
+async function loadDefaultKtaTasks(){
+  const existingKeys = new Set(tasks.map(t=>t.name+'|'+t.date));
+  let added = 0;
+  DEFAULT_KTA_TASKS.forEach(task=>{
+    const key = task.name+'|'+task.date;
+    if(existingKeys.has(key)) return;
+    tasks.push({
+      id: 't'+Date.now()+Math.random().toString(36).slice(2,7),
+      name: task.name, description: task.description, date: task.date,
+      type: task.type, status:'recibido', file:null
+    });
+    existingKeys.add(key);
+    added++;
+  });
+  if(added===0){ alert('Esas tareas ya estaban cargadas.'); return; }
+  if(await persistTasks()){
+    renderBoard();
+    if(boardView==='calendar') renderCalendar();
+    alert(added+' tarea(s) agregada(s).');
+  }
 }
 
 function setBoardView(view){
@@ -604,13 +713,18 @@ function setBoardView(view){
 }
 
 function renderBoard(){
+  const sorted = [...tasks].sort((a,b)=> (a.date||'').localeCompare(b.date||''));
+  const eventoTasks = sorted.filter(t => t.type === 'evento');
+  const regularTasks = sorted.filter(t => t.type !== 'evento');
+
+  renderFechas(eventoTasks);
+
   const columns = document.getElementById('columns');
   columns.innerHTML = '';
-  const sorted = [...tasks].sort((a,b)=> (a.date||'').localeCompare(b.date||''));
   STATUSES.forEach(status=>{
     const col = document.createElement('div');
     col.className = 'column';
-    const list = sorted.filter(t=>t.status===status);
+    const list = regularTasks.filter(t=>t.status===status);
     col.innerHTML = `
       <div class="column-head">
         <span class="column-title">${STATUS_LABEL[status]}</span>
