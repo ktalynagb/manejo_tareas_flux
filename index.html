@@ -525,6 +525,7 @@ async function goBoard(forceReload=false){
   }
   renderLegend();
   renderBoard();
+  if(boardView === 'calendar') renderCalendar();
   showScreen('screen-board');
 }
 
