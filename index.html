@@ -59,13 +59,20 @@
   }
   .btn-new:hover{background:var(--teal-dark);color:#fff;transform:translateY(-1px);}
 
-  .storage-note{
-    font-family:'DM Mono',monospace;font-size:11px;color:var(--ink-soft);
-    background:var(--card);border:1px solid var(--line);border-radius:10px;
-    padding:8px 12px;margin-bottom:18px;display:none;
+  /* ---------- search ---------- */
+  .search-wrap{position:relative;flex:1;max-width:260px;}
+  .search-input{
+    width:100%;padding:8px 14px 8px 34px;border-radius:999px;
+    border:1.5px solid var(--line);background:#fff;
+    font-family:'Urbanist',sans-serif;font-size:13.5px;color:var(--ink);
+    outline:none;transition:border-color .15s ease;
   }
-  .storage-note.error{color:#993C1D;border-color:#F0997B;background:#FAECE7;}
-  .sync-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--teal);margin-right:6px;}
+  .search-input:focus{border-color:var(--sapphire);}
+  .search-input::placeholder{color:var(--ink-soft);}
+  .search-icon{
+    position:absolute;left:11px;top:50%;transform:translateY(-50%);
+    color:var(--ink-soft);font-size:13px;pointer-events:none;line-height:1;
+  }
 
   /* ---------- screens ---------- */
   .screen{display:none;}
@@ -319,9 +326,6 @@
     </div>
   </div>
 
-  <div class="storage-note" id="storageNote">
-    <span class="sync-dot"></span>Tus tareas se sincronizan automáticamente entre todos tus dispositivos.
-  </div>
 
   <!-- WELCOME -->
   <div class="screen active" id="screen-welcome">
@@ -390,6 +394,10 @@
   <div class="screen" id="screen-board">
     <div class="board-sub">
       <div class="legend" id="legend"></div>
+      <div class="search-wrap">
+        <span class="search-icon">⌕</span>
+        <input class="search-input" type="text" id="searchInput" placeholder="Buscar tarea o fecha…" oninput="onSearch(this.value)">
+      </div>
     </div>
 
     <div id="fechas-section" style="display:none;">
@@ -452,6 +460,7 @@ const MAX_FILE_BYTES = 2 * 1024 * 1024;
 let tasks = [];
 let tasksLoaded = false;
 let selectedType = null;
+let searchTerm = '';
 let pendingFile = null;
 let editingId = null;
 let boardView = 'kanban';
@@ -463,10 +472,7 @@ async function loadTasks(){
     const res = await fetch(API_URL);
     if(!res.ok) throw new Error('bad status');
     tasks = await res.json();
-    setSyncStatus(true);
-  }catch(e){
-    setSyncStatus(false);
-  }
+  }catch(e){}
 }
 async function persistTasks(){
   try{
@@ -476,22 +482,10 @@ async function persistTasks(){
       body: JSON.stringify(tasks)
     });
     if(!res.ok) throw new Error('bad status');
-    setSyncStatus(true);
     return true;
   }catch(e){
-    setSyncStatus(false);
-    alert('No se pudo guardar en el servidor de sincronización. Revisa tu conexión e inténtalo de nuevo.');
+    alert('No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.');
     return false;
-  }
-}
-function setSyncStatus(ok){
-  const note = document.getElementById('storageNote');
-  if(ok){
-    note.classList.remove('error');
-    note.innerHTML = '<span class="sync-dot"></span>Tus tareas se sincronizan automáticamente entre todos tus dispositivos.';
-  }else{
-    note.classList.add('error');
-    note.innerHTML = 'No se pudo conectar con el servidor de sincronización. Revisa tu conexión a internet.';
   }
 }
 
@@ -499,7 +493,11 @@ function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   document.getElementById('boardNavWrap').style.display = (id==='screen-board') ? 'flex' : 'none';
-  document.getElementById('storageNote').style.display = (id==='screen-board') ? 'block' : 'none';
+  if(id !== 'screen-board'){
+    const si = document.getElementById('searchInput');
+    if(si) si.value = '';
+    searchTerm = '';
+  }
 }
 
 function goForm(prefill){
@@ -642,6 +640,16 @@ async function loadDefaultEvents(){
   }
 }
 
+function matchesSearch(task){
+  if(!searchTerm) return true;
+  return task.name.toLowerCase().includes(searchTerm);
+}
+function onSearch(val){
+  searchTerm = val.trim().toLowerCase();
+  renderBoard();
+  if(boardView === 'calendar') renderCalendar();
+}
+
 function renderLegend(){
   const legend = document.getElementById('legend');
   legend.innerHTML = Object.entries(TYPES)
@@ -695,8 +703,8 @@ function setBoardView(view){
 
 function renderBoard(){
   const sorted = [...tasks].sort((a,b)=> (a.date||'').localeCompare(b.date||''));
-  const eventoTasks = sorted.filter(t => t.type === 'evento');
-  const regularTasks = sorted.filter(t => t.type !== 'evento');
+  const eventoTasks = sorted.filter(t => t.type === 'evento' && matchesSearch(t));
+  const regularTasks = sorted.filter(t => t.type !== 'evento' && matchesSearch(t));
 
   renderFechas(eventoTasks);
 
@@ -826,7 +834,7 @@ function renderCalendar(){
     const iso = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
     const el = document.createElement('div');
     el.className = 'cal-day' + (iso===todayIso ? ' today' : '');
-    const dayTasks = tasks.filter(t=>t.date===iso);
+    const dayTasks = tasks.filter(t=>t.date===iso && matchesSearch(t));
     const chipsHtml = dayTasks.map((t,i)=>{
       const type = TYPES[t.type];
       return `<span class="cal-chip" data-id="${t.id}" style="background:${type.bg};color:${type.color}" title="${escapeHtml(t.name)}">T${i+1}</span>`;
