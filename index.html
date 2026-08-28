@@ -305,7 +305,6 @@
         <button class="nav-tab active" id="tabKanban" onclick="setBoardView('kanban')">Tablero</button>
         <button class="nav-tab" id="tabCalendar" onclick="setBoardView('calendar')">Calendario</button>
       </div>
-      <button class="btn-ghost" onclick="loadDefaultKtaTasks()">Cargar mis tareas</button>
       <button class="btn-ghost" onclick="loadDefaultEvents()">Cargar fechas de FLUX</button>
       <button class="btn-new" onclick="goForm()"><i>+</i> Nueva tarea</button>
     </div>
@@ -440,19 +439,6 @@ const STATUS_LABEL = { recibido:'Recibido', proceso:'En proceso', finalizada:'Fi
 const API_URL = '/.netlify/functions/tasks';
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
 
-const DEFAULT_KTA_TASKS = [
-  { name:'Contenido Hackatón (carrusel completo)', date:'2026-08-29', type:'comunicacion', description:'' },
-  { name:'Subir publicaciones LinkedIn',           date:'2026-08-29', type:'comunicacion', description:'' },
-  { name:'Corregir HTML calibración',              date:'2026-08-29', type:'pcb',          description:'' },
-  { name:'Publicación microscopio',                date:'2026-09-02', type:'comunicacion', description:'' },
-  { name:'Publicación twingo',                     date:'2026-09-04', type:'comunicacion', description:'' },
-  { name:'Misión, visión y cultura',               date:'2026-09-04', type:'bienestar',    description:'' },
-  { name:'Propuestas de negocio',                  date:'2026-09-09', type:'creativo',     description:'' },
-  { name:'Proponer plan anual de actividades FLUX',date:'2026-09-12', type:'bienestar',    description:'⚠️ urgente — aniversario FLUX' },
-  { name:'Crear estrategias internas para medición y prevención del agotamiento', date:'2026-09-16', type:'bienestar', description:'' },
-  { name:'Establecer identidad visual provisional para UEN2', date:'2026-09-18', type:'creativo', description:'' },
-  { name:'Integración de Obsidian con el calendario', date:'2026-09-12', type:'pcb',      description:'' },
-];
 
 let tasks = [];
 let tasksLoaded = false;
@@ -681,27 +667,12 @@ function renderFechas(eventoTasks){
   });
 }
 
-async function loadDefaultKtaTasks(){
-  const existingKeys = new Set(tasks.map(t=>t.name+'|'+t.date));
-  let added = 0;
-  DEFAULT_KTA_TASKS.forEach(task=>{
-    const key = task.name+'|'+task.date;
-    if(existingKeys.has(key)) return;
-    tasks.push({
-      id: 't'+Date.now()+Math.random().toString(36).slice(2,7),
-      name: task.name, description: task.description, date: task.date,
-      type: task.type, status:'recibido', file:null
-    });
-    existingKeys.add(key);
-    added++;
-  });
-  if(added===0){ alert('Esas tareas ya estaban cargadas.'); return; }
-  if(await persistTasks()){
-    renderBoard();
-    if(boardView==='calendar') renderCalendar();
-    alert(added+' tarea(s) agregada(s).');
-  }
-}
+window.limpiarTareas = async function(){
+  await loadTasks();
+  tasks = tasks.filter(t => t.type === 'evento');
+  const ok = await persistTasks();
+  if(ok){ tasksLoaded = false; await goBoard(true); console.log('Tareas borradas. Solo quedan fechas importantes.'); }
+};
 
 function setBoardView(view){
   boardView = view;
