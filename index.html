@@ -201,6 +201,10 @@
     border-left:4px solid var(--chip-color);cursor:pointer;transition:border-color .12s ease;
   }
   .task-card:hover{border-color:var(--chip-color);}
+  .task-card.t-overdue{background:#FDF4F3;border-color:rgba(192,57,43,0.22);}
+  .task-card.t-today{background:#FDFAF2;border-color:rgba(245,166,35,0.28);}
+  .task-card.t-soon{background:#FDFDF6;}
+  .task-card.t-done{opacity:0.68;}
   .task-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px;}
   .task-name{font-size:14px;font-weight:700;line-height:1.35;}
   .task-del{background:none;border:none;color:var(--ink-soft);cursor:pointer;font-size:15px;line-height:1;padding:2px;flex-shrink:0;}
@@ -212,6 +216,14 @@
     background:var(--chip-bg);color:var(--chip-color);
   }
   .task-date{font-family:'DM Mono',monospace;font-size:11.5px;color:var(--ink-soft);display:flex;align-items:center;gap:5px;}
+  .time-badge{
+    font-family:'DM Mono',monospace;font-size:10px;font-weight:700;
+    padding:2px 7px;border-radius:5px;white-space:nowrap;flex-shrink:0;
+  }
+  .time-badge.overdue{background:#F5D5D1;color:#993C1D;}
+  .time-badge.today{background:#FAEEDA;color:#8a5c0a;}
+  .time-badge.soon{background:#FFF4E0;color:#9a6e10;}
+  .time-badge.ok{background:#E4F0ED;color:#158f83;}
   .task-move{display:flex;gap:6px;margin-top:10px;}
   .move-btn{
     flex:1;font-family:'DM Mono',monospace;font-size:11px;padding:6px 0;border-radius:7px;
@@ -735,11 +747,16 @@ function renderBoard(){
 function renderCard(task, status){
   const t = TYPES[task.type];
   const idx = STATUSES.indexOf(status);
+  const ts = getTimeStatus(task.date, task.status);
   const card = document.createElement('div');
-  card.className = 'task-card';
+  const stateClass = ts ? `t-${ts.type}` : '';
+  card.className = `task-card ${stateClass}`;
   card.style.setProperty('--chip-color', t.dot);
   card.style.setProperty('--chip-bg', t.bg);
   const dateFmt = task.date ? formatDate(task.date) : 'Sin fecha';
+  const badgeHtml = ts && ts.label
+    ? `<span class="time-badge ${ts.type}">${ts.label}</span>`
+    : '';
   card.innerHTML = `
     <div class="task-top">
       <div class="task-name">${escapeHtml(task.name)}</div>
@@ -748,7 +765,10 @@ function renderCard(task, status){
     ${task.description ? `<p class="task-desc">${escapeHtml(task.description)}</p>` : ''}
     <div class="task-meta">
       <span class="task-type-pill">${t.label}</span>
-      <span class="task-date mono">${task.file ? '<span class="clip-icon">📎</span>' : ''}${dateFmt}</span>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <span class="task-date mono">${task.file ? '<span class="clip-icon">📎</span>' : ''}${dateFmt}</span>
+        ${badgeHtml}
+      </div>
     </div>
     <div class="task-move">
       <button class="move-btn" data-role="prev" ${idx===0?'disabled':''}>‹ mover</button>
@@ -783,6 +803,21 @@ async function deleteTask(id){
   await persistTasks();
   renderBoard();
   if(boardView==='calendar') renderCalendar();
+}
+
+function getTimeStatus(dateStr, taskStatus){
+  if(taskStatus === 'finalizada') return { type:'done', label:'' };
+  if(!dateStr) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const due = new Date(dateStr + 'T00:00:00');
+  const diff = Math.round((due - today) / 86400000);
+  if(diff < 0){
+    const d = Math.abs(diff);
+    return { type:'overdue', label: d === 1 ? '1 día de retraso' : `${d} días de retraso` };
+  }
+  if(diff === 0) return { type:'today', label:'Vence hoy' };
+  if(diff <= 3) return { type:'soon', label: diff === 1 ? 'Vence mañana' : `${diff} días restantes` };
+  return { type:'ok', label:`${diff} días restantes` };
 }
 
 function formatDate(iso){
