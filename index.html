@@ -500,6 +500,9 @@
           <button onclick="calShift(1)">›</button>
         </div>
       </div>
+      <div class="legend" style="margin-bottom:14px;">
+        <div class="legend-item"><span class="legend-dot mono" style="background:#F3E8FF;color:#6B21A8;width:auto;height:auto;border-radius:5px;padding:1px 5px;font-size:10px;font-weight:700;">R</span> Reunión registrada</div>
+      </div>
       <div class="cal-grid" id="calGrid"></div>
     </div>
 
@@ -995,15 +998,26 @@ function renderCalendar(){
     const el = document.createElement('div');
     el.className = 'cal-day' + (iso===todayIso ? ' today' : '');
     const dayTasks = tasks.filter(t=>t.date===iso && matchesSearch(t));
-    const chipsHtml = dayTasks.map((t,i)=>{
+    const dayReuniones = reuniones.filter(r=>r.fecha===iso && reunionMatchesSearch(r));
+    const taskChipsHtml = dayTasks.map((t,i)=>{
       const type = TYPES[t.type];
-      return `<span class="cal-chip" data-id="${t.id}" style="background:${type.bg};color:${type.color}" title="${escapeHtml(t.name)}">T${i+1}</span>`;
+      return `<span class="cal-chip" data-kind="task" data-id="${t.id}" style="background:${type.bg};color:${type.color}" title="${escapeHtml(t.name)}">T${i+1}</span>`;
     }).join('');
-    el.innerHTML = `<div class="cal-daynum">${day}</div><div class="cal-chips">${chipsHtml}</div>`;
+    const reunionChipsHtml = dayReuniones.map((r,i)=>{
+      const snippet = (r.hecho || r.charla || '').trim();
+      const title = 'Reunión' + (snippet ? ': '+snippet : '');
+      return `<span class="cal-chip" data-kind="reunion" data-id="${r.id}" style="background:#F3E8FF;color:#6B21A8" title="${escapeAttr(title)}">R${i+1}</span>`;
+    }).join('');
+    el.innerHTML = `<div class="cal-daynum">${day}</div><div class="cal-chips">${taskChipsHtml}${reunionChipsHtml}</div>`;
     el.querySelectorAll('.cal-chip').forEach(chip=>{
       chip.addEventListener('click', ()=>{
-        const task = tasks.find(t=>t.id===chip.getAttribute('data-id'));
-        if(task) goForm(task);
+        if(chip.dataset.kind === 'reunion'){
+          const r = reuniones.find(x=>x.id===chip.getAttribute('data-id'));
+          if(r) goReunionForm(r);
+        } else {
+          const task = tasks.find(t=>t.id===chip.getAttribute('data-id'));
+          if(task) goForm(task);
+        }
       });
     });
     grid.appendChild(el);
