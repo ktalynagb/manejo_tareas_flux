@@ -291,6 +291,37 @@
   }
   .fecha-del:hover{color:#C0392B;}
 
+  /* ---------- reuniones ---------- */
+  .reunion-card{
+    background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;
+    cursor:pointer;transition:border-color .12s ease;margin-bottom:10px;
+  }
+  .reunion-card:hover{border-color:var(--navy);}
+  .reunion-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;}
+  .reunion-fecha{font-size:13px;font-weight:700;color:var(--navy);}
+  .reunion-actions{display:flex;gap:4px;}
+  .reunion-icon-btn{background:none;border:1px solid var(--line);border-radius:7px;color:var(--ink-soft);cursor:pointer;font-size:13px;padding:4px 8px;}
+  .reunion-icon-btn:hover{border-color:var(--navy);color:var(--navy);}
+  .reunion-snippet{font-size:12.5px;color:var(--ink-soft);line-height:1.5;margin:0 0 8px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+  .reunion-meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--ink-soft);}
+
+  .grupo-block{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px;}
+  .grupo-head{display:flex;gap:8px;margin-bottom:8px;}
+  .grupo-head .grupo-persona{flex:1;padding:9px 11px;border-radius:8px;border:1.5px solid var(--line);font-family:'Urbanist',sans-serif;font-size:13.5px;font-weight:700;color:var(--navy);outline:none;background:#fff;}
+  .grupo-head .grupo-persona:focus{border-color:var(--sapphire);}
+  .grupo-del{flex-shrink:0;background:none;border:none;color:var(--ink-soft);cursor:pointer;font-size:16px;padding:4px 8px;}
+  .grupo-del:hover{color:#C0392B;}
+  .pendiente-row-flux{display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap;}
+  .pendiente-row-flux .pend-check{flex-shrink:0;width:16px;height:16px;}
+  .pendiente-row-flux .pend-desc{flex:2;min-width:140px;padding:7px 9px;border-radius:7px;border:1.5px solid var(--line);font-size:13px;background:#fff;}
+  .pendiente-row-flux .pend-fecha{flex:1;min-width:120px;padding:7px 9px;border-radius:7px;border:1.5px solid var(--line);font-size:12.5px;background:#fff;}
+  .pendiente-row-flux .pend-nota{flex:1;min-width:120px;padding:7px 9px;border-radius:7px;border:1.5px solid var(--line);font-size:12.5px;background:#fff;}
+  .pend-del-flux{flex-shrink:0;background:none;border:none;color:var(--ink-soft);cursor:pointer;font-size:14px;padding:4px 6px;}
+  .pend-del-flux:hover{color:#C0392B;}
+  .add-pendiente-btn{background:none;border:1.5px dashed var(--line);color:var(--ink-soft);border-radius:8px;padding:7px;width:100%;font-size:12px;font-weight:700;cursor:pointer;font-family:'Urbanist',sans-serif;}
+  .add-pendiente-btn:hover{border-color:var(--navy);color:var(--navy);}
+  .btn-primary:disabled{opacity:0.65;cursor:not-allowed;}
+
   @media(max-width:760px){
     .columns{grid-template-columns:1fr;}
     .topbar{flex-direction:column;align-items:flex-start;gap:14px;}
@@ -334,8 +365,9 @@
       <div class="nav-tabs">
         <button class="nav-tab active" id="tabKanban" onclick="setBoardView('kanban')">Tablero</button>
         <button class="nav-tab" id="tabCalendar" onclick="setBoardView('calendar')">Calendario</button>
+        <button class="nav-tab" id="tabReuniones" onclick="setBoardView('reuniones')">Reuniones</button>
       </div>
-<button class="btn-new" onclick="goForm()"><i>+</i> Nueva tarea</button>
+<button class="btn-new" onclick="onBtnNewMainClick()"><i>+</i> <span id="btnNewMainLabel">Nueva tarea</span></button>
     </div>
   </div>
 
@@ -403,6 +435,42 @@
     </div>
   </div>
 
+  <!-- REUNION FORM -->
+  <div class="screen" id="screen-reunion-form">
+    <div class="form-card" style="max-width:760px;">
+      <h2 class="form-title" id="reunionFormTitle">Nueva reunión</h2>
+      <p class="form-sub">Bitácora de reunión — FLUX Solutions Cali</p>
+
+      <div class="field">
+        <label for="reunionFecha">Fecha</label>
+        <input type="date" id="reunionFecha">
+        <div class="err" id="errReunionFecha">Selecciona una fecha.</div>
+      </div>
+
+      <div class="field">
+        <label>1. Hablar qué hemos hecho</label>
+        <textarea id="reunionHecho" placeholder="Resumen de avances, decisiones, contexto..." style="min-height:100px;"></textarea>
+      </div>
+
+      <div class="field">
+        <label>2. Qué nos falta (reagendar)</label>
+        <div id="reunionGrupos"></div>
+        <button type="button" class="btn-ghost" style="width:100%;margin-top:6px;" id="addGrupoBtn">+ Agregar persona</button>
+      </div>
+
+      <div class="field">
+        <label>3. Charla libre</label>
+        <textarea id="reunionCharla" placeholder="(Espacio abierto)" style="min-height:80px;"></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn-ghost" onclick="goBoard()">Cancelar</button>
+        <button class="btn-danger-ghost" id="deleteReunionBtn" style="display:none;" onclick="deleteReunionFromForm()">Eliminar</button>
+        <button class="btn-primary" id="saveReunionBtn" onclick="saveReunion()">Guardar reunión</button>
+      </div>
+    </div>
+  </div>
+
   <!-- BOARD -->
   <div class="screen" id="screen-board">
     <div class="board-sub">
@@ -433,6 +501,10 @@
         </div>
       </div>
       <div class="cal-grid" id="calGrid"></div>
+    </div>
+
+    <div id="view-reuniones" style="display:none;">
+      <div id="reunionesListWrap"></div>
     </div>
   </div>
 
@@ -467,6 +539,7 @@ const DEFAULT_EVENTS = [
 const STATUSES = ['recibido','proceso','finalizada'];
 const STATUS_LABEL = { recibido:'Recibido', proceso:'En proceso', finalizada:'Finalizada' };
 const API_URL = '/.netlify/functions/tasks';
+const API_URL_REUNIONES = '/.netlify/functions/reuniones';
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
 
 
@@ -479,6 +552,12 @@ let editingId = null;
 let boardView = 'kanban';
 let calCursor = new Date();
 calCursor.setDate(1);
+
+let reuniones = [];
+let reunionesLoaded = false;
+let editingReunionId = null;
+let reunionDraft = null;
+let savingReunion = false;
 
 async function loadTasks(){
   try{
@@ -498,6 +577,28 @@ async function persistTasks(){
     return true;
   }catch(e){
     alert('No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.');
+    return false;
+  }
+}
+
+async function loadReuniones(){
+  try{
+    const res = await fetch(API_URL_REUNIONES);
+    if(!res.ok) throw new Error('bad status');
+    reuniones = await res.json();
+  }catch(e){}
+}
+async function persistReuniones(){
+  try{
+    const res = await fetch(API_URL_REUNIONES, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(reuniones)
+    });
+    if(!res.ok) throw new Error('bad status');
+    return true;
+  }catch(e){
+    alert('No se pudo guardar la reunión. Revisa tu conexión e inténtalo de nuevo.');
     return false;
   }
 }
@@ -534,10 +635,20 @@ async function goBoard(forceReload=false){
     await loadTasks();
     tasksLoaded = true;
   }
+  if(forceReload || !reunionesLoaded){
+    await loadReuniones();
+    reunionesLoaded = true;
+  }
   renderLegend();
   renderBoard();
   if(boardView === 'calendar') renderCalendar();
+  if(boardView === 'reuniones') renderReunionesView();
   showScreen('screen-board');
+}
+
+function onBtnNewMainClick(){
+  if(boardView === 'reuniones') goReunionForm();
+  else goForm();
 }
 
 function renderTypeGrid(){
@@ -661,6 +772,7 @@ function onSearch(val){
   searchTerm = val.trim().toLowerCase();
   renderBoard();
   if(boardView === 'calendar') renderCalendar();
+  if(boardView === 'reuniones') renderReunionesView();
 }
 
 function renderLegend(){
@@ -709,9 +821,13 @@ function setBoardView(view){
   boardView = view;
   document.getElementById('tabKanban').classList.toggle('active', view==='kanban');
   document.getElementById('tabCalendar').classList.toggle('active', view==='calendar');
+  document.getElementById('tabReuniones').classList.toggle('active', view==='reuniones');
   document.getElementById('view-kanban').style.display = view==='kanban' ? 'block':'none';
   document.getElementById('view-calendar').style.display = view==='calendar' ? 'block':'none';
+  document.getElementById('view-reuniones').style.display = view==='reuniones' ? 'block':'none';
+  document.getElementById('btnNewMainLabel').textContent = view==='reuniones' ? 'Nueva reunión' : 'Nueva tarea';
   if(view==='calendar') renderCalendar();
+  if(view==='reuniones') renderReunionesView();
 }
 
 function renderBoard(){
@@ -829,6 +945,14 @@ function escapeHtml(str){
   div.textContent = str;
   return div.innerHTML;
 }
+function escapeAttr(str){
+  return String(str==null?'':str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function matchExistingCasing(value, existingList){
+  if(!value) return value;
+  const found = existingList.find(v => v.toLowerCase() === value.toLowerCase());
+  return found || value;
+}
 
 /* ---------- calendar ---------- */
 const MONTHS = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
@@ -884,6 +1008,247 @@ function renderCalendar(){
     });
     grid.appendChild(el);
   }
+}
+
+/* =========================================================
+   REUNIONES (Bitácora de Reunión — FLUX Solutions Cali)
+   ========================================================= */
+function goReunionForm(prefill){
+  editingReunionId = prefill ? prefill.id : null;
+  reunionDraft = prefill
+    ? JSON.parse(JSON.stringify(prefill))
+    : { id:null, fecha: new Date().toISOString().slice(0,10), hecho:'', grupos:[], charla:'' };
+  document.getElementById('reunionFecha').value = reunionDraft.fecha || '';
+  document.getElementById('reunionHecho').value = reunionDraft.hecho || '';
+  document.getElementById('reunionCharla').value = reunionDraft.charla || '';
+  document.querySelectorAll('#screen-reunion-form .err').forEach(e=>e.style.display='none');
+  document.getElementById('reunionFormTitle').textContent = prefill ? 'Editar reunión' : 'Nueva reunión';
+  document.getElementById('deleteReunionBtn').style.display = prefill ? 'inline-block' : 'none';
+  renderGrupos();
+  showScreen('screen-reunion-form');
+}
+
+function renderGrupos(){
+  const wrap = document.getElementById('reunionGrupos');
+  const personasExistentes = [...new Set(reuniones.flatMap(r=>(r.grupos||[]).map(g=>g.persona).filter(Boolean)))];
+  const datalistHtml = `<datalist id="personasFluxList">${personasExistentes.map(p=>`<option value="${escapeAttr(p)}">`).join('')}</datalist>`;
+
+  if(reunionDraft.grupos.length===0){
+    wrap.innerHTML = datalistHtml + `<div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px;">Sin personas agregadas.</div>`;
+  } else {
+    wrap.innerHTML = datalistHtml + reunionDraft.grupos.map((g,gi)=>`
+      <div class="grupo-block" data-gidx="${gi}">
+        <div class="grupo-head">
+          <input type="text" class="grupo-persona" list="personasFluxList" data-gidx="${gi}" placeholder="Nombre (ej. Deiv)" value="${escapeAttr(g.persona)}">
+          <button type="button" class="grupo-del" data-gidx="${gi}" title="Eliminar persona">×</button>
+        </div>
+        <div class="grupo-pendientes" data-gidx="${gi}">
+          ${(g.pendientes||[]).map((p,pi)=>`
+            <div class="pendiente-row-flux" data-gidx="${gi}" data-pidx="${pi}">
+              <input type="checkbox" class="pend-check" data-gidx="${gi}" data-pidx="${pi}" ${p.estado==='resuelto'?'checked':''} title="Resuelto">
+              <input type="text" class="pend-desc" data-gidx="${gi}" data-pidx="${pi}" placeholder="Descripción" value="${escapeAttr(p.descripcion)}">
+              <input type="date" class="pend-fecha" data-gidx="${gi}" data-pidx="${pi}" value="${escapeAttr(p.fecha)}">
+              <input type="text" class="pend-nota" data-gidx="${gi}" data-pidx="${pi}" placeholder="Nota (opcional)" value="${escapeAttr(p.nota||'')}">
+              <button type="button" class="pend-del-flux" data-gidx="${gi}" data-pidx="${pi}" title="Eliminar">×</button>
+            </div>
+          `).join('')}
+        </div>
+        <button type="button" class="add-pendiente-btn" data-gidx="${gi}">+ Agregar pendiente</button>
+      </div>
+    `).join('');
+  }
+
+  wrap.querySelectorAll('.grupo-persona').forEach(inp=>{
+    inp.addEventListener('input', ()=>{ reunionDraft.grupos[Number(inp.dataset.gidx)].persona = inp.value; });
+  });
+  wrap.querySelectorAll('.grupo-del').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ reunionDraft.grupos.splice(Number(btn.dataset.gidx),1); renderGrupos(); });
+  });
+  wrap.querySelectorAll('.pend-check').forEach(inp=>{
+    inp.addEventListener('change', ()=>{
+      const g = reunionDraft.grupos[Number(inp.dataset.gidx)];
+      g.pendientes[Number(inp.dataset.pidx)].estado = inp.checked ? 'resuelto' : 'abierto';
+    });
+  });
+  wrap.querySelectorAll('.pend-desc').forEach(inp=>{
+    inp.addEventListener('input', ()=>{
+      reunionDraft.grupos[Number(inp.dataset.gidx)].pendientes[Number(inp.dataset.pidx)].descripcion = inp.value;
+    });
+  });
+  wrap.querySelectorAll('.pend-fecha').forEach(inp=>{
+    inp.addEventListener('input', ()=>{
+      reunionDraft.grupos[Number(inp.dataset.gidx)].pendientes[Number(inp.dataset.pidx)].fecha = inp.value;
+    });
+  });
+  wrap.querySelectorAll('.pend-nota').forEach(inp=>{
+    inp.addEventListener('input', ()=>{
+      reunionDraft.grupos[Number(inp.dataset.gidx)].pendientes[Number(inp.dataset.pidx)].nota = inp.value;
+    });
+  });
+  wrap.querySelectorAll('.pend-del-flux').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      reunionDraft.grupos[Number(btn.dataset.gidx)].pendientes.splice(Number(btn.dataset.pidx),1);
+      renderGrupos();
+    });
+  });
+  wrap.querySelectorAll('.add-pendiente-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      reunionDraft.grupos[Number(btn.dataset.gidx)].pendientes.push({ descripcion:'', fecha:'', nota:'', estado:'abierto' });
+      renderGrupos();
+    });
+  });
+  document.getElementById('addGrupoBtn').onclick = ()=>{
+    reunionDraft.grupos.push({ persona:'', pendientes:[] });
+    renderGrupos();
+  };
+}
+
+async function saveReunion(){
+  if(savingReunion) return;
+  savingReunion = true;
+  const btn = document.getElementById('saveReunionBtn');
+  const originalText = btn ? btn.textContent : '';
+  if(btn){ btn.disabled = true; btn.textContent = 'Guardando…'; }
+  try{
+    await saveReunionInner();
+  } finally {
+    savingReunion = false;
+    if(btn){ btn.disabled = false; btn.textContent = originalText; }
+  }
+}
+
+async function saveReunionInner(){
+  const fecha = document.getElementById('reunionFecha').value;
+  document.getElementById('errReunionFecha').style.display = 'none';
+  if(!fecha){ document.getElementById('errReunionFecha').style.display = 'block'; return; }
+
+  reunionDraft.fecha = fecha;
+  reunionDraft.hecho = document.getElementById('reunionHecho').value.trim();
+  reunionDraft.charla = document.getElementById('reunionCharla').value.trim();
+
+  const existingPersonas = [...new Set(reuniones.filter(r=>r.id!==editingReunionId).flatMap(r=>(r.grupos||[]).map(g=>g.persona).filter(Boolean)))];
+  reunionDraft.grupos = reunionDraft.grupos
+    .map(g=>({
+      persona: matchExistingCasing((g.persona||'').trim(), existingPersonas),
+      pendientes: (g.pendientes||[])
+        .filter(p=>(p.descripcion||'').trim())
+        .map(p=>({ ...p, descripcion:p.descripcion.trim(), nota:(p.nota||'').trim() }))
+    }))
+    .filter(g=>g.persona);
+
+  const now = new Date().toISOString();
+  if(editingReunionId){
+    const idx = reuniones.findIndex(r=>r.id===editingReunionId);
+    reunionDraft.updatedAt = now;
+    reuniones[idx] = reunionDraft;
+  } else {
+    reunionDraft.id = 'r'+Date.now()+Math.random().toString(36).slice(2,7);
+    reunionDraft.createdAt = now;
+    reunionDraft.updatedAt = now;
+    reuniones.push(reunionDraft);
+  }
+  if(await persistReuniones()) goBoard();
+}
+
+async function deleteReunionFromForm(){
+  if(!editingReunionId) return;
+  if(!confirm('¿Eliminar esta reunión?')) return;
+  reuniones = reuniones.filter(r=>r.id!==editingReunionId);
+  await persistReuniones();
+  goBoard();
+}
+
+async function quickDeleteReunion(id){
+  if(!confirm('¿Eliminar esta reunión?')) return;
+  reuniones = reuniones.filter(r=>r.id!==id);
+  await persistReuniones();
+  renderReunionesView();
+}
+
+function reunionMatchesSearch(r){
+  if(!searchTerm) return true;
+  const hay = [
+    r.hecho, r.charla,
+    ...(r.grupos||[]).flatMap(g=>[g.persona, ...(g.pendientes||[]).map(p=>p.descripcion)])
+  ].join(' ').toLowerCase();
+  return hay.includes(searchTerm);
+}
+
+function renderReunionesView(){
+  const wrap = document.getElementById('reunionesListWrap');
+  const sorted = [...reuniones].sort((a,b)=> (b.fecha||'').localeCompare(a.fecha||''));
+  const filtered = sorted.filter(reunionMatchesSearch);
+  if(filtered.length===0){
+    wrap.innerHTML = `<div class="empty-col" style="padding:40px 10px;">Aún no hay reuniones registradas.</div>`;
+    return;
+  }
+  wrap.innerHTML = filtered.map(r=>renderReunionCardHtml(r)).join('');
+  wrap.querySelectorAll('.reunion-card').forEach(card=>{
+    const id = card.dataset.id;
+    card.addEventListener('click', e=>{
+      const role = e.target.getAttribute('data-role');
+      if(role==='export'){ e.stopPropagation(); exportReunionMarkdown(reuniones.find(r=>r.id===id)); return; }
+      if(role==='del'){ e.stopPropagation(); quickDeleteReunion(id); return; }
+      goReunionForm(reuniones.find(r=>r.id===id));
+    });
+  });
+}
+
+function renderReunionCardHtml(r){
+  const pendAbiertos = (r.grupos||[]).reduce((n,g)=>n+(g.pendientes||[]).filter(p=>p.estado!=='resuelto').length, 0);
+  const personasCount = (r.grupos||[]).length;
+  const snippet = (r.hecho||'').trim() || (r.charla||'').trim();
+  return `
+    <div class="reunion-card" data-id="${r.id}">
+      <div class="reunion-top">
+        <span class="reunion-fecha mono">${formatDate(r.fecha)}</span>
+        <div class="reunion-actions">
+          <button class="reunion-icon-btn" data-role="export" title="Exportar .md">⤓ .md</button>
+          <button class="reunion-icon-btn" data-role="del" title="Eliminar">×</button>
+        </div>
+      </div>
+      ${snippet ? `<p class="reunion-snippet">${escapeHtml(snippet)}</p>` : ''}
+      <div class="reunion-meta">
+        ${personasCount>0 ? `<span>${personasCount} persona(s)</span>` : ''}
+        ${pendAbiertos>0
+          ? `<span class="task-type-pill" style="background:#FAEEDA;color:#b6790f;">${pendAbiertos} pendiente(s)</span>`
+          : `<span class="task-type-pill" style="background:#E1F5EE;color:#158f83;">Sin pendientes</span>`}
+      </div>
+    </div>
+  `;
+}
+
+function pad2(n){ return String(n).padStart(2,'0'); }
+function dateDashesLong(iso){ if(!iso) return ''; const [y,m,d]=iso.split('-'); return `${d}-${m}-${y}`; }
+function dateDashesShort(iso){ if(!iso) return ''; const [,m,d]=iso.split('-'); return `${d}-${m}`; }
+
+function reunionToMarkdown(r){
+  let md = `# Bitácora de Reunión — FLUX Solutions Cali\n\n**Fecha:** ${dateDashesLong(r.fecha)}\n\n---\n\n## 1. Hablar qué hemos hecho\n\n${r.hecho || ''}\n\n---\n\n## 2. Qué nos falta (reagendar)\n\n`;
+  (r.grupos||[]).forEach(g=>{
+    md += `### ${g.persona}\n`;
+    (g.pendientes||[]).forEach(p=>{
+      const fechaCorta = p.fecha ? ` → **${dateDashesShort(p.fecha)}**` : '';
+      const nota = p.nota ? ` ⚠️ *${p.nota}*` : '';
+      md += `- [${p.estado==='resuelto'?'x':' '}] ${p.descripcion}${fechaCorta}${nota}\n`;
+    });
+    md += `\n`;
+  });
+  md += `---\n\n## 3. Charla libre\n\n*(Espacio abierto)*\n\n${r.charla || ''}\n`;
+  return md;
+}
+
+function downloadFile(filename, content, mime){
+  const blob = new Blob([content], { type:mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function exportReunionMarkdown(r){
+  if(!r) return;
+  downloadFile(`bitacora-flux-${r.fecha||'reunion'}.md`, reunionToMarkdown(r), 'text/markdown');
 }
 
 </script>
