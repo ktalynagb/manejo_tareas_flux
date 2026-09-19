@@ -15,7 +15,7 @@ exports.handler = async (event) => {
   const store = getStore({
     name: 'flux-tareas',
     siteID: process.env.SITE_ID,
-    token: process.env.BLOBS_TOKEN
+    token: process.env.FLUX_API_TOKEN
   });
 
   if (event.httpMethod === 'GET') {
