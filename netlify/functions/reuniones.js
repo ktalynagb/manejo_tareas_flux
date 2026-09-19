@@ -12,7 +12,7 @@ exports.handler = async (event) => {
     return { statusCode: 204, headers, body: '' };
   }
 
-  const store = getStore('flux-reuniones');
+  const store = getStore({ name: 'flux-reuniones', siteID: process.env.SITE_ID, token: process.env.FLUX_API_TOKEN });
 
   if (event.httpMethod === 'GET') {
     const data = await store.get('reuniones', { type: 'json' });
