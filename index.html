@@ -797,8 +797,9 @@ function renderFechas(eventoTasks){
     const dateFmt = task.date ? formatDate(task.date) : 'Sin fecha';
     const item = document.createElement('div');
     item.className = 'fecha-item';
+    const tp = TYPES[task.type] || TYPES['evento'];
     item.innerHTML = `
-      <span class="fecha-badge">${dateFmt}</span>
+      <span class="fecha-badge" style="background:${tp.bg};color:${tp.color}">${dateFmt}</span>
       <span class="fecha-name">${escapeHtml(task.name)}</span>
       <button class="fecha-del" title="Eliminar">×</button>
     `;
@@ -836,8 +837,8 @@ function setBoardView(view){
 
 function renderBoard(){
   const sorted = [...tasks].sort((a,b)=> (a.date||'').localeCompare(b.date||''));
-  const eventoTasks = sorted.filter(t => t.type === 'evento' && matchesSearch(t));
-  const regularTasks = sorted.filter(t => t.type !== 'evento' && matchesSearch(t));
+  const eventoTasks = sorted.filter(t => (t.type === 'evento' || t.type === 'uao') && matchesSearch(t));
+  const regularTasks = sorted.filter(t => t.type !== 'evento' && t.type !== 'uao' && matchesSearch(t));
 
   renderFechas(eventoTasks);
 
