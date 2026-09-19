@@ -1002,7 +1002,7 @@ function renderCalendar(){
     const dayReuniones = reuniones.filter(r=>r.fecha===iso && reunionMatchesSearch(r));
     const taskChipsHtml = dayTasks.map((t,i)=>{
       const type = TYPES[t.type];
-      return `<span class="cal-chip" data-kind="task" data-id="${t.id}" style="background:${type.bg};color:${type.color}" title="${escapeHtml(t.name)}">T${i+1}</span>`;
+      return `<span class="cal-chip" data-kind="task" data-id="${t.id}" style="background:${type.bg};color:${type.color}" title="${escapeHtml(t.name)}">${t.type==='uao'?'📚':'T'+(i+1)}</span>`;
     }).join('');
     const reunionChipsHtml = dayReuniones.map((r,i)=>{
       const snippet = (r.hecho || r.charla || '').trim();
